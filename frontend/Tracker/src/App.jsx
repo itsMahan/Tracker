@@ -4,52 +4,86 @@ import { fetchTodos, createTodo, updateTodo, deleteTodo } from "./api";
 export default function App() {
   const [todos, setTodos] = useState([]);
   const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [adding, setAdding] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     loadTodos();
   }, []);
 
   async function loadTodos() {
+    setLoading(true);
+    setError("");
     try {
       const res = await fetchTodos();
+      console.log("Todos fetched:", res.data); // Debug
       setTodos(res.data);
     } catch (err) {
-      console.error("Failed to fetch todos:", err);
+      setError("Failed to load todos.");
+      console.error(err);
+    } finally {
+      setLoading(false);
     }
   }
 
   async function addTodo() {
-    if (input.trim() === "") return;
+    if (!input.trim() || adding) return;
+
+    setAdding(true);
+    setError("");
+    const newTodo = { id: Date.now(), text: input, done: false };
+
+    // Optimistic UI
+    setTodos([...todos, newTodo]);
+    setInput("");
+
     try {
-      await createTodo(input);
-      setInput("");
-      loadTodos();
+      const res = await createTodo(input);
+      console.log("Todo added:", res.data); // Debug
+      loadTodos(); // Reload from backend to get actual ID
     } catch (err) {
-      console.error("Failed to add todo:", err);
+      setError("Failed to add todo.");
+      console.error(err);
+      setTodos(todos); // Revert if failed
+    } finally {
+      setAdding(false);
     }
   }
 
-  async function toggleTodo(id, done) {
+  async function toggleTodo(id) {
+    const todo = todos.find((t) => t.id === id);
+    if (!todo) return;
+
+    setTodos(todos.map((t) => (t.id === id ? { ...t, done: !t.done } : t))); // Optimistic UI
+
     try {
-      await updateTodo(id, { done: !done });
-      loadTodos();
+      await updateTodo(id, { done: !todo.done });
     } catch (err) {
-      console.error("Failed to update todo:", err);
+      setError("Failed to update todo.");
+      console.error(err);
+      setTodos(todos); // Revert if failed
     }
   }
 
   async function removeTodo(id) {
+    const oldTodos = [...todos];
+    setTodos(todos.filter((t) => t.id !== id)); // Optimistic UI
+
     try {
       await deleteTodo(id);
-      loadTodos();
     } catch (err) {
-      console.error("Failed to delete todo:", err);
+      setError("Failed to delete todo.");
+      console.error(err);
+      setTodos(oldTodos); // Revert if failed
     }
   }
 
   return (
     <div className="min-h-screen flex flex-col items-center bg-gray-100 p-6">
       <h1 className="text-3xl font-bold mb-4">My To-Do App</h1>
+
+      {error && <p className="text-red-500 mb-2">{error}</p>}
 
       <div className="flex gap-2 mb-6">
         <input
@@ -61,35 +95,40 @@ export default function App() {
         />
         <button
           onClick={addTodo}
-          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+          disabled={adding}
+          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:opacity-50"
         >
-          Add
+          {adding ? "Adding..." : "Add"}
         </button>
       </div>
 
-      <ul className="space-y-2 w-72">
-        {todos.map((todo) => (
-          <li
-            key={todo.id}
-            className="flex justify-between items-center bg-white p-2 rounded shadow"
-          >
-            <span
-              onClick={() => toggleTodo(todo.id, todo.done)}
-              className={`cursor-pointer ${
-                todo.done ? "line-through text-gray-400" : ""
-              }`}
+      {loading ? (
+        <p>Loading todos...</p>
+      ) : (
+        <ul className="space-y-2 w-72">
+          {todos.map((todo) => (
+            <li
+              key={todo.id}
+              className="flex justify-between items-center bg-white p-2 rounded shadow"
             >
-              {todo.text}
-            </span>
-            <button
-              onClick={() => removeTodo(todo.id)}
-              className="text-red-500 hover:text-red-700"
-            >
-              ✕
-            </button>
-          </li>
-        ))}
-      </ul>
+              <span
+                onClick={() => toggleTodo(todo.id)}
+                className={`cursor-pointer ${
+                  todo.done ? "line-through text-gray-400" : ""
+                }`}
+              >
+                {todo.text}
+              </span>
+              <button
+                onClick={() => removeTodo(todo.id)}
+                className="text-red-500 hover:text-red-700"
+              >
+                ✕
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
