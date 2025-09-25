@@ -1,12 +1,16 @@
 import { useState, useEffect } from "react";
-import { fetchTodos, createTodo, updateTodo, deleteTodo } from "./api";
+import { fetchTodos, createTodo } from "./api";
 
 export default function App() {
   const [todos, setTodos] = useState([]);
-  const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [adding, setAdding] = useState(false);
   const [error, setError] = useState("");
+
+  // Modal state
+  const [showModal, setShowModal] = useState(false);
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [adding, setAdding] = useState(false);
 
   useEffect(() => {
     loadTodos();
@@ -17,65 +21,31 @@ export default function App() {
     setError("");
     try {
       const res = await fetchTodos();
-      console.log("Todos fetched:", res.data); // Debug
-      setTodos(res.data);
+      setTodos(res.data || []);
     } catch (err) {
-      setError("Failed to load todos.");
+      setError("Failed to fetch todos.");
       console.error(err);
     } finally {
       setLoading(false);
     }
   }
 
-  async function addTodo() {
-    if (!input.trim() || adding) return;
-
+  async function handleAddTodo() {
+    if (!title.trim() || !description.trim() || adding) return;
     setAdding(true);
     setError("");
-    const newTodo = { id: Date.now(), text: input, done: false };
-
-    // Optimistic UI
-    setTodos([...todos, newTodo]);
-    setInput("");
 
     try {
-      const res = await createTodo(input);
-      console.log("Todo added:", res.data); // Debug
-      loadTodos(); // Reload from backend to get actual ID
+      await createTodo({ title, description }); // POST new todo
+      setTitle("");
+      setDescription("");
+      setShowModal(false);
+      loadTodos(); // Refresh list after POST
     } catch (err) {
       setError("Failed to add todo.");
       console.error(err);
-      setTodos(todos); // Revert if failed
     } finally {
       setAdding(false);
-    }
-  }
-
-  async function toggleTodo(id) {
-    const todo = todos.find((t) => t.id === id);
-    if (!todo) return;
-
-    setTodos(todos.map((t) => (t.id === id ? { ...t, done: !t.done } : t))); // Optimistic UI
-
-    try {
-      await updateTodo(id, { done: !todo.done });
-    } catch (err) {
-      setError("Failed to update todo.");
-      console.error(err);
-      setTodos(todos); // Revert if failed
-    }
-  }
-
-  async function removeTodo(id) {
-    const oldTodos = [...todos];
-    setTodos(todos.filter((t) => t.id !== id)); // Optimistic UI
-
-    try {
-      await deleteTodo(id);
-    } catch (err) {
-      setError("Failed to delete todo.");
-      console.error(err);
-      setTodos(oldTodos); // Revert if failed
     }
   }
 
@@ -85,49 +55,66 @@ export default function App() {
 
       {error && <p className="text-red-500 mb-2">{error}</p>}
 
-      <div className="flex gap-2 mb-6">
-        <input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && addTodo()}
-          placeholder="Enter a task..."
-          className="border rounded p-2 w-64"
-        />
-        <button
-          onClick={addTodo}
-          disabled={adding}
-          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:opacity-50"
-        >
-          {adding ? "Adding..." : "Add"}
-        </button>
-      </div>
+      <button
+        onClick={() => setShowModal(true)}
+        className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 mb-4"
+      >
+        Add Todo
+      </button>
 
       {loading ? (
         <p>Loading todos...</p>
+      ) : todos.length === 0 ? (
+        <p>No todos yet. Add one above!</p>
       ) : (
-        <ul className="space-y-2 w-72">
+        <ul className="space-y-2 w-96">
           {todos.map((todo) => (
             <li
               key={todo.id}
-              className="flex justify-between items-center bg-white p-2 rounded shadow"
+              className="flex flex-col bg-white p-2 rounded shadow text-black"
             >
-              <span
-                onClick={() => toggleTodo(todo.id)}
-                className={`cursor-pointer ${
-                  todo.done ? "line-through text-gray-400" : ""
-                }`}
-              >
-                {todo.text}
-              </span>
-              <button
-                onClick={() => removeTodo(todo.id)}
-                className="text-red-500 hover:text-red-700"
-              >
-                ✕
-              </button>
+              <span className="font-semibold">{todo.title}</span>
+              <p className="text-sm">{todo.description}</p>
             </li>
           ))}
         </ul>
+      )}
+
+      {/* Modal */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+          <div className="bg-white p-6 rounded shadow w-96">
+            <h2 className="text-xl font-bold mb-4 text-black">Add New Todo</h2>
+            <input
+              type="text"
+              placeholder="Title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="border rounded p-2 w-full mb-2 text-black"
+            />
+            <textarea
+              placeholder="Description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="border rounded p-2 w-full mb-4 text-black"
+            />
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setShowModal(false)}
+                className="px-4 py-2 rounded border text-black"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAddTodo}
+                disabled={adding}
+                className="px-4 py-2 rounded bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50"
+              >
+                {adding ? "Adding..." : "Add"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
