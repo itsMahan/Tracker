@@ -38,6 +38,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
+    #apps
+    'task.apps.TaskConfig',
+
     #3rd-party
     'rest_framework',
     'drf_spectacular',
