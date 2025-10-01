@@ -40,6 +40,7 @@ INSTALLED_APPS = [
 
     #apps
     'task.apps.TaskConfig',
+    'counter.apps.CounterConfig',
 
     #3rd-party
     'rest_framework',
