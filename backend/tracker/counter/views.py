@@ -1,48 +1,37 @@
-from rest_framework import status
-from rest_framework.response import Response
-from rest_framework.views import APIView
-from yaml import serialize
-
+from rest_framework import generics
+from rest_framework.permissions import IsAuthenticated
 from .models import Counter
 from .serializers import CounterSerializer
-
+from task import permissions
 
 # Create your views here.
 
-class CounterListView(APIView):
+class CounterListView(generics.ListAPIView):
+    queryset = Counter.objects.all()
     serializer_class = CounterSerializer
+    permission_classes = [IsAuthenticated]
 
-    def get(self, request):
-        counters = Counter.objects.all()
-        serializer = CounterSerializer(counters, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+    def get_queryset(self):
+        return Counter.objects.filter(user=self.request.user)
 
 
-class CounterCreateView(APIView):
+class CounterCreateView(generics.CreateAPIView):
+    queryset = Counter.objects.all()
     serializer_class = CounterSerializer
+    permission_classes = [IsAuthenticated]
 
-    def post(self, request):
-        serializer = CounterSerializer(data=request.data)
-        if serializer.is_valid():
-            if request.user.is_authenticated:
-                serializer.validated_data['user'] = request.user
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
 
 
-class CounterUpdateView(APIView):
+class CounterUpdateView(generics.UpdateAPIView):
+    queryset = Counter.objects.all()
     serializer_class = CounterSerializer
+    permission_classes = [IsAuthenticated, permissions.IsUserOrReadOnly]
 
-    def put(self, request, pk):
-        counter = Counter.objects.get(id=pk)
-        serializer = CounterSerializer(instance=counter, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    def delete(self, request, pk):
-        counter = Counter.objects.get(id=pk)
-        counter.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+class CounterDeleteView(generics.DestroyAPIView):
+    queryset = Counter.objects.all()
+    serializer_class = CounterSerializer
+    permission_classes = [IsAuthenticated, permissions.IsUserOrReadOnly]
+

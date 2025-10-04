@@ -1,48 +1,34 @@
-from rest_framework import status
-from rest_framework.response import Response
-from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated
+from rest_framework import generics
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from .models import Task
 from .serializers import TaskSerializer
-
+from . import permissions
 
 # Create your views here.
 
-class TaskListView(APIView):
-    # permission_classes = [IsAuthenticated]
+class TaskListView(generics.ListAPIView):
+    queryset = Task.objects.all()
     serializer_class = TaskSerializer
+    permission_classes = [IsAuthenticated]
 
-    def get(self, request):
-        tasks = Task.objects.all()
-        serializer = TaskSerializer(tasks, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+    def get_queryset(self):
+        return Task.objects.filter(user=self.request.user)
 
 
-class TaskCreateView(APIView):
-    # permission_classes = [IsAuthenticated]
+class TaskCreateView(generics.CreateAPIView):
+    queryset = Task.objects.all()
     serializer_class = TaskSerializer
+    permission_classes = [IsAuthenticated]
 
-    def post(self, request):
-        serializer = TaskSerializer(data=request.data)
-        if serializer.is_valid():
-            if request.user.is_authenticated:
-                serializer.validated_data['user'] = request.user
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
 
-class TaskUpdateView(APIView):
+class TaskUpdateView(generics.UpdateAPIView):
+    queryset = Task.objects.all()
     serializer_class = TaskSerializer
+    permission_classes = [IsAuthenticated, permissions.IsUserOrReadOnly]
 
-    def put(self, request, pk):
-        task = Task.objects.get(id=pk)
-        serializer = TaskSerializer(instance=task, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    def delete(self, request, pk):
-        task = Task.objects.get(id=pk)
-        task.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+class TaskDeleteView(generics.DestroyAPIView):
+    queryset = Task.objects.all()
+    serializer_class = TaskSerializer
+    permission_classes = [IsAuthenticated, permissions.IsUserOrReadOnly]
