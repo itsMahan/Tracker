@@ -2,26 +2,37 @@ import React, { useState, useContext } from "react";
 import axios from "axios";
 import { ThemeContext } from "./themeContext";
 
-export default function Login({ onLogin, onShowSignup }) {
+export default function Signup({ onSignup }) {
   const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [password2, setPassword2] = useState("");
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
-  const { theme, toggleTheme } = useContext(ThemeContext);
+  const { theme } = useContext(ThemeContext);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (password !== password2) {
+      setError("Passwords do not match");
+      return;
+    }
+
     try {
-      const res = await axios.post("http://127.0.0.1:8000/api/token/", {
+      await axios.post("http://127.0.0.1:8000/api/users/register", {
         username,
+        email,
         password,
+        password2,
       });
-      localStorage.setItem("access_token", res.data.access);
-      localStorage.setItem("refresh_token", res.data.refresh);
-      onLogin();
+      setSuccess("Account created successfully! Please login.");
       setError("");
+      setTimeout(() => {
+        onSignup(); // switch back to login page
+      }, 1500);
     } catch (err) {
-      setError("Invalid username or password");
+      setError("Failed to register. Try a different username or email.");
     }
   };
 
@@ -35,13 +46,25 @@ export default function Login({ onLogin, onShowSignup }) {
         onSubmit={handleSubmit}
         className="flex flex-col gap-4 w-full max-w-sm"
       >
-        <h2 className="text-2xl font-bold cursor-pointer">Login</h2>
+        <h2 className="text-2xl font-bold cursor-pointer">Sign Up</h2>
 
         <input
           type="text"
           placeholder="Username"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
+          className={`p-2 rounded border focus:outline-none ${
+            theme === "light"
+              ? "bg-white text-black placeholder-gray-500 border-gray-300"
+              : "bg-gray-800 text-white placeholder-gray-400 border-gray-600"
+          }`}
+        />
+
+        <input
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
           className={`p-2 rounded border focus:outline-none ${
             theme === "light"
               ? "bg-white text-black placeholder-gray-500 border-gray-300"
@@ -61,7 +84,20 @@ export default function Login({ onLogin, onShowSignup }) {
           }`}
         />
 
+        <input
+          type="password"
+          placeholder="Confirm Password"
+          value={password2}
+          onChange={(e) => setPassword2(e.target.value)}
+          className={`p-2 rounded border focus:outline-none ${
+            theme === "light"
+              ? "bg-white text-black placeholder-gray-500 border-gray-300"
+              : "bg-gray-800 text-white placeholder-gray-400 border-gray-600"
+          }`}
+        />
+
         {error && <p className="text-red-500">{error}</p>}
+        {success && <p className="text-green-500">{success}</p>}
 
         <button
           type="submit"
@@ -69,18 +105,8 @@ export default function Login({ onLogin, onShowSignup }) {
             theme === "light" ? "bg-blue-500 text-white" : "bg-blue-700 text-white"
           }`}
         >
-          Login
+          Sign Up
         </button>
-
-        <p className="text-sm text-center mt-2">
-          Don't have an account?{" "}
-          <span
-            className="text-blue-500 cursor-pointer"
-            onClick={onShowSignup}
-          >
-            Sign up
-          </span>
-        </p>
       </form>
     </div>
   );
