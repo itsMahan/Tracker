@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     #apps
     'task.apps.TaskConfig',
     'counter.apps.CounterConfig',
+    'event.apps.EventConfig',
     'accounts.apps.AccountsConfig',
 
     #3rd-party
