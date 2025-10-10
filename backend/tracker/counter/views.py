@@ -1,5 +1,8 @@
-from rest_framework import generics
+from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from django.utils.timezone import now
 from .models import Counter
 from .serializers import CounterSerializer
 from task import permissions
@@ -34,4 +37,22 @@ class CounterDeleteView(generics.DestroyAPIView):
     queryset = Counter.objects.all()
     serializer_class = CounterSerializer
     permission_classes = [IsAuthenticated, permissions.IsUserOrReadOnly]
+
+
+class CounterResetView(APIView):
+    serializer_class = CounterSerializer
+    permission_classes = [IsAuthenticated, permissions.IsUserOrReadOnly]
+
+    def patch(self, request, pk):
+        try:
+            counter = Counter.objects.get(id=pk)
+        except Counter.DoesNotExist:
+            return Response({'error': 'Counter Not Found!'}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = CounterSerializer(counter)
+        counter.start_date = now().date()
+        counter.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
 

@@ -7,4 +7,5 @@ urlpatterns = [
     path('add', views.CounterCreateView.as_view(), name='create_counter'),
     path('update/<int:pk>', views.CounterUpdateView.as_view(), name='update_counter'),
     path('delete/<int:pk>', views.CounterDeleteView.as_view(), name='delete_counter'),
+    path('reset/<int:pk>', views.CounterResetView.as_view(), name='reset_counter'),
 ]

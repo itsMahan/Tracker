@@ -1,13 +1,12 @@
-from django.contrib.admin.templatetags.admin_list import date_hierarchy
 from django.db import models
-from django.contrib.auth.models import User
+from django.conf import settings
 from datetime import date
 from django.utils.timezone import now
 # Create your models here.
 
 
 class Counter(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='counters')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='counters')
     title = models.CharField(max_length=255)
     start_date = models.DateField(default=date.today)
     created_at = models.DateField(auto_now_add=True)
