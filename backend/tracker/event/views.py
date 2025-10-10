@@ -51,3 +51,40 @@ class EventResetView(APIView):
         counter.used = 1
         counter.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class EventIncreaseView(APIView):
+    serializer_class = EventSerializer
+    permission_classes = [IsAuthenticated, IsUserOrReadOnly]
+
+    def patch(self, request, pk):
+        try:
+            counter = Event.objects.get(id=pk)
+        except Event.DoesNotExist:
+            return Response({'error': 'Counter Not Found!'}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = EventSerializer(counter)
+        if not counter.total:
+            counter.used += 1
+            counter.save()
+        elif counter.used < counter.total:
+            counter.used += 1
+            counter.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+class EventDecreaseView(APIView):
+    serializer_class = EventSerializer
+    permission_classes = [IsAuthenticated, IsUserOrReadOnly]
+
+    def patch(self, request, pk):
+        try:
+            counter = Event.objects.get(id=pk)
+        except Event.DoesNotExist:
+            return Response({'error': 'Counter Not Found!'}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = EventSerializer(counter)
+        if counter.used > 0:
+            counter.used -= 1
+            counter.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
