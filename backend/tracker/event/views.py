@@ -48,7 +48,7 @@ class EventResetView(APIView):
             return Response({'error': 'Counter Not Found!'}, status=status.HTTP_404_NOT_FOUND)
 
         serializer = EventSerializer(counter)
-        counter.used = 1
+        counter.used = 0
         counter.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
 
