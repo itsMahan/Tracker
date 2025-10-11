@@ -1,9 +1,9 @@
 from rest_framework import status, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .serializers import UserRegisterSerializer
+from .serializers import *
 from rest_framework_simplejwt.views import TokenObtainPairView
-from .serializers import CustomTokenObtainPairSerializer
+from .send_email import send_otp_via_email
 
 # Create your views here.
 
@@ -15,8 +15,32 @@ class UserRegisterView(APIView):
         serializer = UserRegisterSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            send_otp_via_email(serializer.data['email'])
+            return Response(data="Please Check Your Email Address for Verification Code", status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class UserVerifyOtp(APIView):
+    permission_classes = [permissions.AllowAny]
+    serializer_class = VerifyAccountSerializer
+
+    def post(self, request):
+        serializer =VerifyAccountSerializer(data=request.data)
+        if serializer.is_valid():
+            email = serializer.data['email']
+            otp = serializer.data['otp']
+            users = CustomUser.objects.filter(email=email)
+            if not users.exists():
+                return Response(data='Invalid Email', status=status.HTTP_400_BAD_REQUEST)
+
+            if users[0].otp != otp:
+                return Response(data='Wrong Verification Code', status=status.HTTP_400_BAD_REQUEST)
+
+            user = users.first()
+            user.is_verified = True
+            user.otp = None
+            user.save()
+            return Response(data='Account Verified Successfully', status=status.HTTP_200_OK)
 
 
 class CustomTokenObtainPairView(TokenObtainPairView):

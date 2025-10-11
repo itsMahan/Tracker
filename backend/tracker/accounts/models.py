@@ -8,6 +8,8 @@ from .managers import CustomUserManager
 
 class CustomUser(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(verbose_name="Your Email Address", unique=True)
+    is_verified = models.BooleanField(default=False)
+    otp = models.CharField(max_length=4, null=True, blank=True)
     first_name = models.CharField(max_length=255)
     last_name = models.CharField(max_length=255)
     is_staff = models.BooleanField(default=False)

@@ -8,7 +8,7 @@ from .models import CustomUser
 @admin.register(CustomUser)
 class CustomUserAdmin(UserAdmin):
     model = CustomUser
-    list_display = ("email", "first_name", "last_name", "is_staff", "is_active")
+    list_display = ("email", "first_name", "last_name", "is_staff", "is_active", "is_verified")
     # list_filter = ()
     ordering = ("email",)
     search_fields = ("first_name", "last_name")

@@ -1,8 +1,6 @@
 from rest_framework import serializers
-from rest_framework_simplejwt.tokens import Token
-
 from .models import CustomUser
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer, AuthUser
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 
 class UserRegisterSerializer(serializers.ModelSerializer):
@@ -10,9 +8,10 @@ class UserRegisterSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CustomUser
-        fields = ['email', 'first_name', 'last_name', 'password', 'password2']
+        fields = ['email', 'first_name', 'last_name', 'is_verified', 'password', 'password2']
         extra_kwargs = {
-            'password': {'write_only': True}
+            'password': {'write_only': True},
+            'is_verified': {'read_only': True},
         }
 
     def validate(self, attrs):
@@ -30,6 +29,11 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         return user
 
 
+class VerifyAccountSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    otp = serializers.CharField()
+
+
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
     def get_token(cls, user):
@@ -43,6 +47,8 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
     def validate(self, attrs):
         data = super().validate(attrs)
+        if not self.user.is_verified:
+            raise serializers.ValidationError("Account not verified. Please verify your email first.")
         data["user"] = {
             "id": self.user.id,
             "email": self.user.email,
