@@ -1,19 +1,16 @@
-import React, { useState, useContext } from "react";
-import axios from "axios";
-import { ThemeContext } from "./themeContext";
+import React, { useState } from "react";
+import api from "./api";
 
 export default function Login({ onLogin, onShowSignup }) {
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-
-  const { theme, toggleTheme } = useContext(ThemeContext);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post("http://127.0.0.1:8000/api/token/", {
-        username,
+      const res = await api.post("login/", {
+        email,
         password,
       });
       localStorage.setItem("access_token", res.data.access);
@@ -21,67 +18,59 @@ export default function Login({ onLogin, onShowSignup }) {
       onLogin();
       setError("");
     } catch (err) {
-      setError("Invalid username or password");
+      setError("Invalid email or password");
     }
   };
 
   return (
-    <div
-      className={`min-h-screen flex flex-col items-center justify-center p-4 transition-colors duration-300 ${
-        theme === "light" ? "bg-white text-black" : "bg-gray-900 text-white"
-      }`}
-    >
-      <form
-        onSubmit={handleSubmit}
-        className="flex flex-col gap-4 w-full max-w-sm"
-      >
-        <h2 className="text-2xl font-bold cursor-pointer">Login</h2>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-base-200 p-4">
+      <div className="card w-full max-w-sm shadow-2xl bg-base-100">
+        <form onSubmit={handleSubmit} className="card-body">
+          <h2 className="card-title">Login</h2>
+          <div className="form-control">
+            <label className="label">
+              <span className="label-text">Email</span>
+            </label>
+            <input
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="input input-bordered"
+            />
+          </div>
+          <div className="form-control">
+            <label className="label">
+              <span className="label-text">Password</span>
+            </label>
+            <input
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="input input-bordered"
+            />
+          </div>
 
-        <input
-          type="text"
-          placeholder="Username"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          className={`p-2 rounded border focus:outline-none ${
-            theme === "light"
-              ? "bg-white text-black placeholder-gray-500 border-gray-300"
-              : "bg-gray-800 text-white placeholder-gray-400 border-gray-600"
-          }`}
-        />
+          {error && <p className="text-red-500">{error}</p>}
 
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className={`p-2 rounded border focus:outline-none ${
-            theme === "light"
-              ? "bg-white text-black placeholder-gray-500 border-gray-300"
-              : "bg-gray-800 text-white placeholder-gray-400 border-gray-600"
-          }`}
-        />
+          <div className="form-control mt-6">
+            <button type="submit" className="btn btn-primary">
+              Login
+            </button>
+          </div>
 
-        {error && <p className="text-red-500">{error}</p>}
-
-        <button
-          type="submit"
-          className={`p-2 rounded ${
-            theme === "light" ? "bg-blue-500 text-white" : "bg-blue-700 text-white"
-          }`}
-        >
-          Login
-        </button>
-
-        <p className="text-sm text-center mt-2">
-          Don't have an account?{" "}
-          <span
-            className="text-blue-500 cursor-pointer"
-            onClick={onShowSignup}
-          >
-            Sign up
-          </span>
-        </p>
-      </form>
+          <p className="text-sm text-center mt-4">
+            Don't have an account?{" "}
+            <span
+              className="link link-primary"
+              onClick={onShowSignup}
+            >
+              Sign up
+            </span>
+          </p>
+        </form>
+      </div>
     </div>
   );
 }

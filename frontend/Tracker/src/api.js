@@ -26,3 +26,5 @@ export const addCounter = ({ title, start_date }) =>
 export const updateCounter = (id, { title, start_date }) =>
   api.put(`counters/update/${id}`, { title, start_date });
 export const deleteCounter = (id) => api.delete(`counters/delete/${id}`);
+
+export default api;
