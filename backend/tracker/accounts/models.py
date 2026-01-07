@@ -37,6 +37,6 @@ class Profile(models.Model):
     date_joined = models.DateTimeField(default=timezone.now)
 
     def __str__(self):
-        return self.user.email
+        return f"{self.user.email}'s Profiles"
 
 
