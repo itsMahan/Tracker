@@ -39,18 +39,18 @@ class TaskDeleteView(generics.DestroyAPIView):
 
 class TaskMarkAsDoneView(APIView):
     serializer_class = TaskSerializer
+    permission_classes = [IsAuthenticated, permissions.IsUserOrReadOnly] # Add permissions
 
     def patch(self, request, pk):
         try:
-            task = Task.objects.get(id=pk)
+            task = Task.objects.get(id=pk, user=request.user) # Ensure user owns the task
         except Task.DoesNotExist:
             return Response({'error': 'Task Not Found'}, status=status.HTTP_404_NOT_FOUND)
 
-        serializer = TaskSerializer(task)
-        if task.is_done:
-            task.is_done = False
-        else:
-            task.is_done = True
+        # Get is_done from request data, default to current value if not provided
+        is_done_from_request = request.data.get('is_done', task.is_done)
+        task.is_done = is_done_from_request
         task.save()
+        serializer = TaskSerializer(task) # Serialize after saving to get updated data
         return Response(serializer.data, status=status.HTTP_200_OK)
 

@@ -43,13 +43,13 @@ class EventResetView(APIView):
 
     def patch(self, request, pk):
         try:
-            counter = Event.objects.get(id=pk)
+            event = Event.objects.get(id=pk)
         except Event.DoesNotExist:
-            return Response({'error': 'Counter Not Found!'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'error': 'Event Not Found!'}, status=status.HTTP_404_NOT_FOUND)
 
-        serializer = EventSerializer(counter)
-        counter.used = 0
-        counter.save()
+        serializer = EventSerializer(event)
+        event.used = 0
+        event.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
@@ -59,17 +59,17 @@ class EventIncreaseView(APIView):
 
     def patch(self, request, pk):
         try:
-            counter = Event.objects.get(id=pk)
+            event = Event.objects.get(id=pk)
         except Event.DoesNotExist:
-            return Response({'error': 'Counter Not Found!'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'error': 'Event Not Found!'}, status=status.HTTP_404_NOT_FOUND)
 
-        serializer = EventSerializer(counter)
-        if not counter.total:
-            counter.used += 1
-            counter.save()
-        elif counter.used < counter.total:
-            counter.used += 1
-            counter.save()
+        serializer = EventSerializer(event)
+        if not event.total:
+            event.used += 1
+            event.save()
+        elif event.used < event.total:
+            event.used += 1
+            event.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 class EventDecreaseView(APIView):
@@ -78,13 +78,13 @@ class EventDecreaseView(APIView):
 
     def patch(self, request, pk):
         try:
-            counter = Event.objects.get(id=pk)
+            event = Event.objects.get(id=pk)
         except Event.DoesNotExist:
-            return Response({'error': 'Counter Not Found!'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'error': 'Event Not Found!'}, status=status.HTTP_404_NOT_FOUND)
 
-        serializer = EventSerializer(counter)
-        if counter.used > 0:
-            counter.used -= 1
-            counter.save()
+        serializer = EventSerializer(event)
+        if event.used > 0:
+            event.used -= 1
+            event.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
 
